@@ -2,24 +2,69 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
-<title>AKANCODE Язык</title>
+<title>AKANCODE с игрой "Угадай число"</title>
 <style>
-  body { font-family: monospace; background: #1e1e1e; color: #cfcfcf; margin: 20px; }
-  textarea { width: 100%; height: 180px; background: #2d2d2d; color: #eee; border: none; padding: 10px; font-size: 16px; }
-  #output { white-space: pre-wrap; margin-top: 15px; background: #111; padding: 10px; min-height: 150px; border-radius: 5px; }
-  button { margin-top: 10px; padding: 10px 20px; font-size: 16px; background: #007acc; border: none; color: white; border-radius: 4px; cursor: pointer; }
-  button:hover { background: #005a9e; }
-  #game-container { margin-top: 15px; background: #222; padding: 10px; border-radius: 5px; }
-  #game-input { width: 60px; font-size: 16px; padding: 5px; }
+  body {
+    font-family: monospace;
+    background: #1e1e1e;
+    color: #cfcfcf;
+    margin: 20px;
+  }
+  textarea {
+    width: 100%;
+    height: 180px;
+    background: #2d2d2d;
+    color: #eee;
+    border: none;
+    padding: 10px;
+    font-size: 16px;
+  }
+  #output {
+    white-space: pre-wrap;
+    margin-top: 15px;
+    background: #111;
+    padding: 10px;
+    min-height: 150px;
+    border-radius: 5px;
+  }
+  button {
+    margin-top: 10px;
+    padding: 10px 15px;
+    font-size: 16px;
+    background: #007acc;
+    border: none;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 10px;
+  }
+  button:hover {
+    background: #005a9e;
+  }
+  #game-container {
+    margin-top: 15px;
+    background: #222;
+    padding: 10px;
+    border-radius: 5px;
+  }
+  #game-input {
+    width: 60px;
+    font-size: 16px;
+    padding: 5px;
+  }
 </style>
 </head>
 <body>
 
 <h2>AKANCODE Онлайн V0.1.0 БЕТА</h2>
 
-<textarea id="code" spellcheck="false" placeholder="Напишите здесь ваш AKANCODE код..."></textarea>
+<textarea id="code" spellcheck="false"></textarea>
 <br>
 <button onclick="runCode()">Запустить</button>
+<button onclick="saveFile()">Сохранить как .ak</button>
+<button onclick="clearOutput()">Очистить</button>
+<button onclick="toggleTheme()">Сменить тему</button>
+<button onclick="showHelp()">Список команд</button>
 
 <div id="output"></div>
 <div id="game-container"></div>
@@ -54,7 +99,6 @@ async function runCode() {
       <button id="game-submit">Угадать</button>
       <div id="game-message" style="margin-top:10px;"></div>
     `;
-
     const input = document.getElementById("game-input");
     const button = document.getElementById("game-submit");
     const message = document.getElementById("game-message");
@@ -86,14 +130,14 @@ async function runCode() {
   }
 
   while (i < code.length) {
-    let line = code[i].trim();
+    let line = code[i].trim().toUpperCase();
     if (!line || line.startsWith("#")) {
       i++;
       continue;
     }
 
     const parts = line.split(" ");
-    const cmd = parts[0].toUpperCase();
+    const cmd = parts[0];
 
     try {
       if (cmd === "ВВОД") {
@@ -112,34 +156,24 @@ async function runCode() {
         let resultVar = parts.pop();
         let total = 0;
         for (let v of parts.slice(1)) {
-          total += parseInt(variables[v] ?? 0);
+          total += parseInt(variables[v] ?? v);
         }
         variables[resultVar] = total;
       } else if (cmd === "ВЫЧЕСТЬ") {
-        let a = parts[1];
-        let b = parts[2];
-        let resultVar = parts[3];
-        let aVal = parseInt(variables[a] ?? 0);
-        let bVal = parseInt(variables[b] ?? 0);
-        variables[resultVar] = aVal - bVal;
+        let resultVar = parts.pop();
+        let a = parseInt(variables[parts[1]] ?? parts[1]);
+        let b = parseInt(variables[parts[2]] ?? parts[2]);
+        variables[resultVar] = a - b;
       } else if (cmd === "УМНОЖИТЬ") {
-        let a = parts[1];
-        let b = parts[2];
-        let resultVar = parts[3];
-        let aVal = parseInt(variables[a] ?? 0);
-        let bVal = parseInt(variables[b] ?? 0);
-        variables[resultVar] = aVal * bVal;
+        let resultVar = parts.pop();
+        let a = parseInt(variables[parts[1]] ?? parts[1]);
+        let b = parseInt(variables[parts[2]] ?? parts[2]);
+        variables[resultVar] = a * b;
       } else if (cmd === "ДЕЛИТЬ") {
-        let a = parts[1];
-        let b = parts[2];
-        let resultVar = parts[3];
-        let aVal = parseInt(variables[a] ?? 0);
-        let bVal = parseInt(variables[b] ?? 1);
-        if (bVal === 0) {
-          variables[resultVar] = "Ошибка: деление на 0";
-        } else {
-          variables[resultVar] = aVal / bVal;
-        }
+        let resultVar = parts.pop();
+        let a = parseInt(variables[parts[1]] ?? parts[1]);
+        let b = parseInt(variables[parts[2]] ?? parts[2]);
+        variables[resultVar] = b === 0 ? "Ошибка: деление на 0" : a / b;
       } else if (cmd === "СЛУЧАЙНО") {
         let a = parseInt(variables[parts[1]] ?? parts[1]);
         let b = parseInt(variables[parts[2]] ?? parts[2]);
@@ -166,10 +200,9 @@ async function runCode() {
           let val = variables[text] ?? `[ОШИБКА: переменная '${text}' не найдена]`;
           await печать_по_буквам(String(val));
         }
-      } else if (cmd === "ИГРА" && parts[1].toUpperCase() === "УГАДАЙ") {
+      } else if (cmd === "ИГРА" && parts[1] === "УГАДАЙ") {
         startGuessGame();
       }
-      // Здесь можно добавить еще команды по желанию
     } catch (e) {
       outputDiv.innerHTML += "Ошибка: " + e.message + "<br>";
     }
@@ -177,7 +210,50 @@ async function runCode() {
     i++;
   }
 }
-</script>
 
+function saveFile() {
+  const content = document.getElementById("code").value;
+  const blob = new Blob([content], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "script.ak";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function clearOutput() {
+  outputDiv.innerHTML = "";
+  gameContainer.innerHTML = "";
+}
+
+let darkMode = true;
+function toggleTheme() {
+  darkMode = !darkMode;
+  document.body.style.background = darkMode ? "#1e1e1e" : "#f0f0f0";
+  document.body.style.color = darkMode ? "#cfcfcf" : "#111";
+  document.getElementById("code").style.background = darkMode ? "#2d2d2d" : "#fff";
+  document.getElementById("code").style.color = darkMode ? "#eee" : "#000";
+  outputDiv.style.background = darkMode ? "#111" : "#e0e0e0";
+  gameContainer.style.background = darkMode ? "#222" : "#e0e0e0";
+}
+
+function showHelp() {
+  const helpText = `
+<b>Список команд AKANCODE:</b><br>
+ВВОД X — запросить значение<br>
+ПРИСВОИТЬ X = Y — задать переменную<br>
+СЛОЖИТЬ A B С — сложить<br>
+ВЫЧЕСТЬ A B РЕЗ — вычесть<br>
+УМНОЖИТЬ A B РЕЗ — умножить<br>
+ДЕЛИТЬ A B РЕЗ — делить<br>
+СЛУЧАЙНО A B VAR — случайное число от A до B<br>
+ВЫВЕСТИ "Текст" или переменные<br>
+ПЕЧАТАТЬ "медленно по буквам"<br>
+ИГРА УГАДАЙ — мини-игра<br>
+`.trim();
+  outputDiv.innerHTML = helpText;
+}
+</script>
 </body>
 </html>
