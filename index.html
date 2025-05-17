@@ -17,8 +17,7 @@
 
 <h2>AKANCODE Онлайн V0.1.0 БЕТА</h2>
 
-<textarea id="code" spellcheck="false">
-</textarea>
+<textarea id="code" spellcheck="false" placeholder="Напишите здесь ваш AKANCODE код..."></textarea>
 <br>
 <button onclick="runCode()">Запустить</button>
 
@@ -94,7 +93,7 @@ async function runCode() {
     }
 
     const parts = line.split(" ");
-    const cmd = parts[0];
+    const cmd = parts[0].toUpperCase();
 
     try {
       if (cmd === "ВВОД") {
@@ -116,6 +115,36 @@ async function runCode() {
           total += parseInt(variables[v] ?? 0);
         }
         variables[resultVar] = total;
+      } else if (cmd === "ВЫЧЕСТЬ") {
+        let a = parts[1];
+        let b = parts[2];
+        let resultVar = parts[3];
+        let aVal = parseInt(variables[a] ?? 0);
+        let bVal = parseInt(variables[b] ?? 0);
+        variables[resultVar] = aVal - bVal;
+      } else if (cmd === "УМНОЖИТЬ") {
+        let a = parts[1];
+        let b = parts[2];
+        let resultVar = parts[3];
+        let aVal = parseInt(variables[a] ?? 0);
+        let bVal = parseInt(variables[b] ?? 0);
+        variables[resultVar] = aVal * bVal;
+      } else if (cmd === "ДЕЛИТЬ") {
+        let a = parts[1];
+        let b = parts[2];
+        let resultVar = parts[3];
+        let aVal = parseInt(variables[a] ?? 0);
+        let bVal = parseInt(variables[b] ?? 1);
+        if (bVal === 0) {
+          variables[resultVar] = "Ошибка: деление на 0";
+        } else {
+          variables[resultVar] = aVal / bVal;
+        }
+      } else if (cmd === "СЛУЧАЙНО") {
+        let a = parseInt(variables[parts[1]] ?? parts[1]);
+        let b = parseInt(variables[parts[2]] ?? parts[2]);
+        let resultVar = parts[3];
+        variables[resultVar] = Math.floor(Math.random() * (b - a + 1)) + a;
       } else if (cmd === "ВЫВЕСТИ") {
         let expr = parts.slice(1).join(" ");
         let outputText = "";
@@ -138,11 +167,9 @@ async function runCode() {
           await печать_по_буквам(String(val));
         }
       } else if (cmd === "ИГРА" && parts[1].toUpperCase() === "УГАДАЙ") {
-        // Запускаем игру - асинхронно, но в основном цикле мы просто вызываем интерфейс
         startGuessGame();
       }
-      // Другие команды можно добавить тут...
-
+      // Здесь можно добавить еще команды по желанию
     } catch (e) {
       outputDiv.innerHTML += "Ошибка: " + e.message + "<br>";
     }
