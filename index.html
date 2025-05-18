@@ -31,6 +31,7 @@
       margin: 5px 5px 5px 0;
       padding: 8px 16px;
       font-size: 14px;
+      font-family: inherit;
       background: #007acc;
       border: none;
       color: white;
@@ -88,28 +89,24 @@
   </div>
 
   <textarea id="code" spellcheck="false"></textarea>
-  <br>
-  <button onclick="runCode()">Запустить</button>
-  <button onclick="openAsSite()">Открыть как сайт</button>
+
+  <div style="margin-top: 10px;">
+    <button onclick="runCode()">Запустить</button>
+    <button onclick="openAsSite()">Открыть как сайт</button>
+  </div>
 
   <div id="output"></div>
-  <div id="ui" style="margin-top: 20px;"></div>
 
 <script>
 const outputDiv = document.getElementById("output");
 const fileInput = document.getElementById("fileInput");
-const uiDiv = document.getElementById("ui");
-let кнопкиНажаты = {};
 
 function clearCode() {
   document.getElementById("code").value = "";
 }
-
 function clearOutput() {
   outputDiv.innerHTML = "";
-  uiDiv.innerHTML = "";
 }
-
 function showHelp() {
   alert(`Доступные команды AKANCODE:
 ВВОД имя
@@ -126,9 +123,8 @@ function showHelp() {
 ЗАГОЛОВОК "текст"
 ТЕКСТ "текст"
 КНОПКА имя "текст"
-ЕСЛИ_НАЖАТА имя ТО команда`);
+ЕСЛИ КНОПКА имя НАЖАТА ТО команда`);
 }
-
 function saveFile() {
   const blob = new Blob([document.getElementById("code").value], { type: "text/plain" });
   const a = document.createElement("a");
@@ -136,11 +132,9 @@ function saveFile() {
   a.download = "script.ak";
   a.click();
 }
-
 function loadFile() {
   fileInput.click();
 }
-
 function handleFile(files) {
   const reader = new FileReader();
   reader.onload = e => {
@@ -148,11 +142,9 @@ function handleFile(files) {
   };
   reader.readAsText(files[0]);
 }
-
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
-
 async function печать_по_буквам(text, delay = 100) {
   for (let i = 0; i < text.length; i++) {
     outputDiv.innerHTML += text[i];
@@ -160,244 +152,134 @@ async function печать_по_буквам(text, delay = 100) {
   }
   outputDiv.innerHTML += "<br>";
 }
+async function runCommands(codeLines, target) {
+  const variables = {};
+  const кнопки = {};
 
-async function runCode() {
-  outputDiv.innerHTML = "";
-  uiDiv.innerHTML = "";
-  кнопкиНажаты = {};
-  const code = document.getElementById("code").value.toUpperCase().split("\n");
-  let variables = {};
   let i = 0;
-
-  while (i < code.length) {
-    let line = code[i].trim();
+  while (i < codeLines.length) {
+    let line = codeLines[i].trim();
     if (!line || line.startsWith("#")) {
       i++;
       continue;
     }
-
     const parts = line.split(" ");
     const cmd = parts[0];
 
     try {
       if (cmd === "ВВОД") {
-        let varName = parts[1];
+        const varName = parts[1];
         let val = prompt(`Введите значение для ${varName}:`);
         val = isNaN(parseInt(val)) ? val : parseInt(val);
         variables[varName] = val;
-      } else if (cmd === "ПРИСВОИТЬ") {
-        let varName = parts[1];
-        if (parts[2] === "=") {
-          let val = parts[3];
-          val = isNaN(parseInt(val)) ? (variables[val] ?? val) : parseInt(val);
-          variables[varName] = val;
-        }
+      } else if (cmd === "ПРИСВОИТЬ" && parts[2] === "=") {
+        const name = parts[1];
+        const val = parts[3];
+        variables[name] = isNaN(val) ? (variables[val] ?? val) : parseInt(val);
       } else if (cmd === "СЛОЖИТЬ") {
-        let resultVar = parts.pop();
+        const result = parts.pop();
         let total = 0;
-        for (let v of parts.slice(1)) {
-          total += parseInt(variables[v] ?? 0);
-        }
-        variables[resultVar] = total;
+        for (let p of parts.slice(1)) total += parseInt(variables[p] ?? 0);
+        variables[result] = total;
       } else if (cmd === "ВЫЧЕСТЬ") {
-        let a = variables[parts[1]] ?? 0;
-        let b = variables[parts[2]] ?? 0;
-        variables[parts[3]] = parseInt(a) - parseInt(b);
+        variables[parts[3]] = parseInt(variables[parts[1]] ?? 0) - parseInt(variables[parts[2]] ?? 0);
       } else if (cmd === "УМНОЖИТЬ") {
-        let a = variables[parts[1]] ?? 0;
-        let b = variables[parts[2]] ?? 0;
-        variables[parts[3]] = parseInt(a) * parseInt(b);
+        variables[parts[3]] = parseInt(variables[parts[1]] ?? 0) * parseInt(variables[parts[2]] ?? 0);
       } else if (cmd === "ДЕЛИТЬ") {
-        let a = parseInt(variables[parts[1]] ?? 0);
-        let b = parseInt(variables[parts[2]] ?? 1);
+        const a = parseInt(variables[parts[1]] ?? 0);
+        const b = parseInt(variables[parts[2]] ?? 1);
         variables[parts[3]] = b !== 0 ? a / b : "Ошибка: деление на 0";
       } else if (cmd === "СЛУЧАЙНО") {
-        let a = parseInt(variables[parts[1]] ?? parts[1]);
-        let b = parseInt(variables[parts[2]] ?? parts[2]);
+        const a = parseInt(variables[parts[1]] ?? parts[1]);
+        const b = parseInt(variables[parts[2]] ?? parts[2]);
         variables[parts[3]] = Math.floor(Math.random() * (b - a + 1)) + a;
       } else if (cmd === "ВЫВЕСТИ") {
-        let expr = parts.slice(1).join(" ");
-        let outputText = "";
-        if (expr.includes("+")) {
-          for (let part of expr.split("+")) {
-            part = part.trim().replace(/^"|"$/g, "");
-            outputText += variables[part] ?? part;
-          }
-        } else {
-          expr = expr.trim().replace(/^"|"$/g, "");
-          outputText = variables[expr] ?? expr;
-        }
-        outputDiv.innerHTML += outputText + "<br>";
+        const expr = parts.slice(1).join(" ");
+        let text = expr.includes("+")
+          ? expr.split("+").map(p => (variables[p.trim()] ?? p.trim().replace(/"/g, ""))).join("")
+          : (variables[expr] ?? expr.replace(/"/g, ""));
+        target.innerHTML += text + "<br>";
       } else if (cmd === "ПЕЧАТАТЬ") {
         let text = parts.slice(1).join(" ");
-        if (text.startsWith('"') && text.endsWith('"')) {
+        if (text.startsWith('"') && text.endsWith('"'))
           await печать_по_буквам(text.slice(1, -1));
-        } else {
-          let val = variables[text] ?? `[ОШИБКА: переменная '${text}' не найдена]`;
-          await печать_по_буквам(String(val));
-        }
+        else
+          await печать_по_буквам(String(variables[text] ?? `[ОШИБКА: переменная '${text}' не найдена]`));
       } else if (cmd === "ЕСЛИ") {
-        const conditionIndex = parts.indexOf("ТО");
-        const condition = parts.slice(1, conditionIndex);
-        const command = parts.slice(conditionIndex + 1).join(" ");
-        let left = variables[condition[0]] ?? condition[0];
-        let op = condition[1];
-        let right = variables[condition[2]] ?? condition[2];
-        left = isNaN(left) ? left : parseFloat(left);
-        right = isNaN(right) ? right : parseFloat(right);
+        const condIndex = parts.indexOf("ТО");
+        const [leftRaw, op, rightRaw] = parts.slice(1, condIndex);
+        const command = parts.slice(condIndex + 1).join(" ");
+        const left = isNaN(leftRaw) ? (variables[leftRaw] ?? leftRaw) : parseFloat(leftRaw);
+        const right = isNaN(rightRaw) ? (variables[rightRaw] ?? rightRaw) : parseFloat(rightRaw);
         let result = false;
         if (op === "=") result = left == right;
         else if (op === ">") result = left > right;
         else if (op === "<") result = left < right;
-        if (result) code.splice(i + 1, 0, command);
+        if (result) codeLines.splice(i + 1, 0, command);
       } else if (cmd === "ИГРА" && parts[1] === "УГАДАЙ") {
         const число = Math.floor(Math.random() * 10) + 1;
         let попытки = 3;
-        while (попытки > 0) {
+        while (попытки-- > 0) {
           let guess = prompt("Угадай число от 1 до 10:");
           if (guess === null) break;
           guess = parseInt(guess);
-          if (isNaN(guess)) {
-            alert("Введи число!");
-          } else if (guess === число) {
-            alert("Правильно! Ты угадал!");
-            break;
-          } else {
-            alert(guess < число ? "Больше!" : "Меньше!");
-          }
-          попытки--;
+          if (guess === число) return alert("Правильно! Ты угадал!");
+          alert(guess < число ? "Больше!" : "Меньше!");
         }
-        if (попытки === 0) {
-          alert(`Ты проиграл! Число было ${число}`);
-        }
+        alert(`Ты проиграл! Число было ${число}`);
       } else if (cmd === "ЗАГОЛОВОК") {
-        let text = line.match(/ЗАГОЛОВОК\s+"(.+?)"/);
-        if (text) {
-          const h1 = document.createElement("h1");
-          h1.textContent = text[1];
-          uiDiv.appendChild(h1);
-        }
+        const text = line.match(/"(.+?)"/)?.[1];
+        const h = document.createElement("h1");
+        h.innerText = text;
+        target.appendChild(h);
       } else if (cmd === "ТЕКСТ") {
-        let text = line.match(/ТЕКСТ\s+"(.+?)"/);
-        if (text) {
-          const p = document.createElement("p");
-          p.textContent = text[1];
-          uiDiv.appendChild(p);
-        }
+        const text = line.match(/"(.+?)"/)?.[1];
+        const p = document.createElement("p");
+        p.innerText = text;
+        target.appendChild(p);
       } else if (cmd === "КНОПКА") {
-        let match = line.match(/КНОПКА\s+(\S+)\s+"(.+?)"/);
-        if (match) {
-          const btnName = match[1];
-          const btnText = match[2];
-          const button = document.createElement("button");
-          button.textContent = btnText;
-          button.id = `btn_${btnName}`;
-          кнопкиНажаты[btnName] = false;
-          button.onclick = () => {
-            кнопкиНажаты[btnName] = true;
-          };
-          uiDiv.appendChild(button);
-        }
-      } else if (cmd === "ЕСЛИ_НАЖАТА") {
-        const idxTO = parts.indexOf("ТО");
-        if (idxTO > 1) {
-          const btnName = parts[1];
-          const command = parts.slice(idxTO + 1).join(" ");
-          if (кнопкиНажаты[btnName]) {
-            code.splice(i + 1, 0, command);
-            кнопкиНажаты[btnName] = false;
-          }
-        }
+        const name = parts[1];
+        const label = line.match(/"(.+?)"/)?.[1];
+        const btn = document.createElement("button");
+        btn.innerText = label;
+        btn.onclick = () => {
+          variables[`КНОПКА_${name}_НАЖАТА`] = true;
+        };
+        кнопки[name] = btn;
+        target.appendChild(btn);
+        target.appendChild(document.createElement("br"));
+      } else if (cmd === "ЕСЛИ" && parts[1] === "КНОПКА" && parts[3] === "НАЖАТА" && parts[4] === "ТО") {
+        const btnName = parts[2];
+        const command = parts.slice(5).join(" ");
+        if (variables[`КНОПКА_${btnName}_НАЖАТА`]) codeLines.splice(i + 1, 0, command);
       }
-
     } catch (e) {
-      outputDiv.innerHTML += "Ошибка: " + e.message + "<br>";
+      target.innerHTML += "Ошибка: " + e.message + "<br>";
     }
 
     i++;
   }
 }
 
-function openAsSite() {
-  const code = document.getElementById("code").value;
-  const html = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>AKANCODE Site</title>
-</head>
-<body>
-<script>
-  const outputDiv = document.body;
-  const uiDiv = document.body;
-  let variables = {};
-  let кнопкиНажаты = {};
-  const lines = \`${code.replace(/`/g, '\\`')}\`.toUpperCase().split("\\n");
-  let i = 0;
-  function sleep(ms) {
-    return new Promise(r => setTimeout(r, ms));
-  }
-  async function печать_по_буквам(text, delay = 100) {
-    for (let ch of text) {
-      document.body.innerHTML += ch;
-      await sleep(delay);
-    }
-    document.body.innerHTML += "<br>";
-  }
-  (async () => {
-    while (i < lines.length) {
-      let line = lines[i].trim();
-      if (!line || line.startsWith("#")) { i++; continue; }
-      const parts = line.split(" ");
-      const cmd = parts[0];
+async function runCode() {
+  outputDiv.innerHTML = "";
+  const code = document.getElementById("code").value.toUpperCase().split("\n");
+  await runCommands(code, outputDiv);
+}
 
-      try {
-        if (cmd === "ЗАГОЛОВОК") {
-          let match = line.match(/ЗАГОЛОВОК\\s+"(.+?)"/);
-          if (match) {
-            const h = document.createElement("h1");
-            h.textContent = match[1];
-            uiDiv.appendChild(h);
-          }
-        } else if (cmd === "ТЕКСТ") {
-          let match = line.match(/ТЕКСТ\\s+"(.+?)"/);
-          if (match) {
-            const p = document.createElement("p");
-            p.textContent = match[1];
-            uiDiv.appendChild(p);
-          }
-        } else if (cmd === "КНОПКА") {
-          let match = line.match(/КНОПКА\\s+(\\S+)\\s+"(.+?)"/);
-          if (match) {
-            const btn = document.createElement("button");
-            btn.textContent = match[2];
-            const name = match[1];
-            кнопкиНажаты[name] = false;
-            btn.onclick = () => кнопкиНажаты[name] = true;
-            uiDiv.appendChild(btn);
-          }
-        } else if (cmd === "ЕСЛИ_НАЖАТА") {
-          const idxTO = parts.indexOf("ТО");
-          const name = parts[1];
-          const command = parts.slice(idxTO + 1).join(" ");
-          if (кнопкиНажаты[name]) {
-            lines.splice(i + 1, 0, command);
-            кнопкиНажаты[name] = false;
-          }
-        }
-      } catch (e) {
-        document.body.innerHTML += "ОШИБКА: " + e.message + "<br>";
-      }
-      i++;
-    }
-  })();
-<\/script>
-</body>
-</html>`;
-  const blob = new Blob([html], { type: "text/html" });
-  const url = URL.createObjectURL(blob);
-  window.open(url, "_blank");
+function openAsSite() {
+  const newWin = window.open();
+  const html = `
+    <html><head><title>AKANCODE сайт</title></head><body style="font-family: monospace; background:#111; color:white; padding:20px;"><div id="site"></div>
+    <script>
+      const target = document.getElementById("site");
+      (${runCommands.toString()})
+      const code = \`${document.getElementById("code").value.toUpperCase()}\`.split("\\n");
+      runCommands(code, target);
+    </script>
+    </body></html>`;
+  newWin.document.write(html);
+  newWin.document.close();
 }
 </script>
 
