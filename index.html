@@ -71,7 +71,7 @@
 </head>
 <body>
 
-  <h2>AKANCODE Онлайн V0.1.0 БЕТА</h2>
+  <h2>AKANCODE Онлайн V0.1.1 БЕТА</h2>
 
   <div class="menu-bar">
     <div class="dropdown">
@@ -90,12 +90,16 @@
   <textarea id="code" spellcheck="false"></textarea>
   <br>
   <button onclick="runCode()">Запустить</button>
+  <button onclick="openAsSite()">Открыть как сайт</button>
 
   <div id="output"></div>
+  <div id="ui" style="margin-top: 20px;"></div>
 
 <script>
 const outputDiv = document.getElementById("output");
 const fileInput = document.getElementById("fileInput");
+const uiDiv = document.getElementById("ui");
+let кнопкиНажаты = {};
 
 function clearCode() {
   document.getElementById("code").value = "";
@@ -103,21 +107,26 @@ function clearCode() {
 
 function clearOutput() {
   outputDiv.innerHTML = "";
+  uiDiv.innerHTML = "";
 }
 
 function showHelp() {
   alert(`Доступные команды AKANCODE:
-ВВОД имя — ввод значения
-ПРИСВОИТЬ имя = значение — присвоение
-СЛОЖИТЬ a b результат — сложение
-ВЫЧЕСТЬ a b результат — вычитание
-УМНОЖИТЬ a b результат — умножение
-ДЕЛИТЬ a b результат — деление
-СЛУЧАЙНО a b результат — случайное число
-ВЫВЕСТИ выражение — вывод
-ПЕЧАТАТЬ "текст" или переменная — печать по буквам
-ЕСЛИ a > b ТО команда — условие
-ИГРА УГАДАЙ — игра угадай число`);
+ВВОД имя
+ПРИСВОИТЬ имя = значение
+СЛОЖИТЬ a b результат
+ВЫЧЕСТЬ a b результат
+УМНОЖИТЬ a b результат
+ДЕЛИТЬ a b результат
+СЛУЧАЙНО a b результат
+ВЫВЕСТИ выражение
+ПЕЧАТАТЬ "текст" или переменная
+ЕСЛИ a > b ТО команда
+ИГРА УГАДАЙ
+ЗАГОЛОВОК "текст"
+ТЕКСТ "текст"
+КНОПКА имя "текст"
+ЕСЛИ_НАЖАТА имя ТО команда`);
 }
 
 function saveFile() {
@@ -154,6 +163,8 @@ async function печать_по_буквам(text, delay = 100) {
 
 async function runCode() {
   outputDiv.innerHTML = "";
+  uiDiv.innerHTML = "";
+  кнопкиНажаты = {};
   const code = document.getElementById("code").value.toUpperCase().split("\n");
   let variables = {};
   let i = 0;
@@ -232,10 +243,8 @@ async function runCode() {
         let left = variables[condition[0]] ?? condition[0];
         let op = condition[1];
         let right = variables[condition[2]] ?? condition[2];
-        if (isNaN(left)) left = left;
-        else left = parseFloat(left);
-        if (isNaN(right)) right = right;
-        else right = parseFloat(right);
+        left = isNaN(left) ? left : parseFloat(left);
+        right = isNaN(right) ? right : parseFloat(right);
         let result = false;
         if (op === "=") result = left == right;
         else if (op === ">") result = left > right;
@@ -261,13 +270,134 @@ async function runCode() {
         if (попытки === 0) {
           alert(`Ты проиграл! Число было ${число}`);
         }
+      } else if (cmd === "ЗАГОЛОВОК") {
+        let text = line.match(/ЗАГОЛОВОК\s+"(.+?)"/);
+        if (text) {
+          const h1 = document.createElement("h1");
+          h1.textContent = text[1];
+          uiDiv.appendChild(h1);
+        }
+      } else if (cmd === "ТЕКСТ") {
+        let text = line.match(/ТЕКСТ\s+"(.+?)"/);
+        if (text) {
+          const p = document.createElement("p");
+          p.textContent = text[1];
+          uiDiv.appendChild(p);
+        }
+      } else if (cmd === "КНОПКА") {
+        let match = line.match(/КНОПКА\s+(\S+)\s+"(.+?)"/);
+        if (match) {
+          const btnName = match[1];
+          const btnText = match[2];
+          const button = document.createElement("button");
+          button.textContent = btnText;
+          button.id = `btn_${btnName}`;
+          кнопкиНажаты[btnName] = false;
+          button.onclick = () => {
+            кнопкиНажаты[btnName] = true;
+          };
+          uiDiv.appendChild(button);
+        }
+      } else if (cmd === "ЕСЛИ_НАЖАТА") {
+        const idxTO = parts.indexOf("ТО");
+        if (idxTO > 1) {
+          const btnName = parts[1];
+          const command = parts.slice(idxTO + 1).join(" ");
+          if (кнопкиНажаты[btnName]) {
+            code.splice(i + 1, 0, command);
+            кнопкиНажаты[btnName] = false;
+          }
+        }
       }
+
     } catch (e) {
       outputDiv.innerHTML += "Ошибка: " + e.message + "<br>";
     }
 
     i++;
   }
+}
+
+function openAsSite() {
+  const code = document.getElementById("code").value;
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>AKANCODE Site</title>
+</head>
+<body>
+<script>
+  const outputDiv = document.body;
+  const uiDiv = document.body;
+  let variables = {};
+  let кнопкиНажаты = {};
+  const lines = \`${code.replace(/`/g, '\\`')}\`.toUpperCase().split("\\n");
+  let i = 0;
+  function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
+  }
+  async function печать_по_буквам(text, delay = 100) {
+    for (let ch of text) {
+      document.body.innerHTML += ch;
+      await sleep(delay);
+    }
+    document.body.innerHTML += "<br>";
+  }
+  (async () => {
+    while (i < lines.length) {
+      let line = lines[i].trim();
+      if (!line || line.startsWith("#")) { i++; continue; }
+      const parts = line.split(" ");
+      const cmd = parts[0];
+
+      try {
+        if (cmd === "ЗАГОЛОВОК") {
+          let match = line.match(/ЗАГОЛОВОК\\s+"(.+?)"/);
+          if (match) {
+            const h = document.createElement("h1");
+            h.textContent = match[1];
+            uiDiv.appendChild(h);
+          }
+        } else if (cmd === "ТЕКСТ") {
+          let match = line.match(/ТЕКСТ\\s+"(.+?)"/);
+          if (match) {
+            const p = document.createElement("p");
+            p.textContent = match[1];
+            uiDiv.appendChild(p);
+          }
+        } else if (cmd === "КНОПКА") {
+          let match = line.match(/КНОПКА\\s+(\\S+)\\s+"(.+?)"/);
+          if (match) {
+            const btn = document.createElement("button");
+            btn.textContent = match[2];
+            const name = match[1];
+            кнопкиНажаты[name] = false;
+            btn.onclick = () => кнопкиНажаты[name] = true;
+            uiDiv.appendChild(btn);
+          }
+        } else if (cmd === "ЕСЛИ_НАЖАТА") {
+          const idxTO = parts.indexOf("ТО");
+          const name = parts[1];
+          const command = parts.slice(idxTO + 1).join(" ");
+          if (кнопкиНажаты[name]) {
+            lines.splice(i + 1, 0, command);
+            кнопкиНажаты[name] = false;
+          }
+        }
+      } catch (e) {
+        document.body.innerHTML += "ОШИБКА: " + e.message + "<br>";
+      }
+      i++;
+    }
+  })();
+<\/script>
+</body>
+</html>`;
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank");
 }
 </script>
 
