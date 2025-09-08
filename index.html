@@ -104,6 +104,7 @@ const outputDiv = document.getElementById("output");
 const fileInput = document.getElementById("fileInput");
 const uiDiv = document.getElementById("ui");
 let кнопкиНажаты = {};
+let isRunning = false;
 
 function clearCode() {
   document.getElementById("code").value = "";
@@ -170,6 +171,9 @@ async function печать_по_буквам(text, delay = 100) {
 
 // ======================= runCode =======================
 async function runCode() {
+  if (isRunning) return;
+  isRunning = true;
+  
   outputDiv.innerHTML = "";
   uiDiv.innerHTML = "";
   кнопкиНажаты = {};
@@ -188,7 +192,7 @@ async function runCode() {
 
   while (i < rawCode.length) {
     let line = rawCode[i].trim();
-    if (!line || line.startsWith("#") || line.startsWith("МЕТКА ")) {
+    if (!line || line.startsWith("#")) {
       i++;
       continue;
     }
@@ -369,7 +373,13 @@ async function runCode() {
         let text = line.split('"').slice(1,2)[0];
         let btn = document.createElement("button");
         btn.textContent = text;
-        btn.onclick = () => { кнопкиНажаты[name] = true; };
+        btn.onclick = () => { 
+          кнопкиНажаты[name] = true;
+          // Перезапускаем выполнение кода при нажатии кнопки
+          if (!isRunning) {
+            runCode();
+          }
+        };
         uiDiv.appendChild(btn);
       } else if (cmd === "МЕТКА") {
         // пропускаем
@@ -387,11 +397,17 @@ async function runCode() {
     }
 
     i++;
+    await sleep(10); // Небольшая задержка для обработки событий
   }
+  
+  isRunning = false;
 }
 
 // ======================= openAsSite =======================
 async function openAsSite() {
+  if (isRunning) return;
+  isRunning = true;
+  
   uiDiv.innerHTML = "";
   outputDiv.innerHTML = "";
   кнопкиНажаты = {};
@@ -410,7 +426,7 @@ async function openAsSite() {
 
   while (i < rawCode.length) {
     let line = rawCode[i].trim();
-    if (!line || line.startsWith("#") || line.startsWith("МЕТКА ")) {
+    if (!line || line.startsWith("#")) {
       i++;
       continue;
     }
@@ -465,7 +481,13 @@ async function openAsSite() {
         let text = line.split('"').slice(1,2)[0];
         let btn = document.createElement("button");
         btn.textContent = text;
-        btn.onclick = () => { кнопкиНажаты[name] = true; };
+        btn.onclick = () => { 
+          кнопкиНажаты[name] = true;
+          // Перезапускаем выполнение кода при нажатии кнопки
+          if (!isRunning) {
+            openAsSite();
+          }
+        };
         uiDiv.appendChild(btn);
       } else if (cmd === "ПЕРЕЙТИ") {
         let labelName = parts[1];
@@ -481,7 +503,10 @@ async function openAsSite() {
     }
 
     i++;
+    await sleep(10); // Небольшая задержка для обработки событий
   }
+  
+  isRunning = false;
 }
 </script>
 
