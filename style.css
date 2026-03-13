@@ -1,71 +1,85 @@
-body {
-  font-family: monospace;
-  background: #1e1e1e;
-  color: #cfcfcf;
-  margin: 20px;
-}
-textarea {
-  width: 100%;
-  height: 180px;
-  background: #2d2d2d;
-  color: #eee;
-  border: none;
-  padding: 10px;
-  font-size: 16px;
-  resize: vertical;
-}
-#output {
-  white-space: pre-wrap;
-  margin-top: 15px;
-  background: #111;
-  padding: 10px;
-  min-height: 100px;
-  border-radius: 5px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-button {
-  margin: 5px 5px 5px 0;
-  padding: 8px 16px;
-  font-size: 14px;
-  background: #e69138;
-  border: none;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
-}
-button:hover {
-  background: #e48a2c;
-}
-.menu-bar {
+/* Панель кнопок под редактором */
+.action-panel {
   display: flex;
   gap: 10px;
-  margin-bottom: 10px;
+  margin: 15px 0;
+  flex-wrap: wrap;
 }
-.dropdown {
-  position: relative;
-  display: inline-block;
+
+.btn-main { background: #4CAF50 !important; font-weight: bold; }
+.btn-site { background: #2196F3 !important; }
+.btn-save { background: #9c27b0 !important; }
+
+/* Стили библиотеки */
+#library-section {
+  background: #252525;
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid #444;
+  margin-bottom: 20px;
 }
-.dropdown-content {
-  display: none;
-  position: absolute;
-  background-color: #333;
-  min-width: 120px;
-  z-index: 1;
-  border: 1px solid #555;
+
+#library-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
 }
-.dropdown-content button {
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: none;
-  color: white;
-  padding: 8px;
-  cursor: pointer;
+
+.library-item {
+  background: #333;
+  padding: 10px;
+  border-radius: 5px;
+  border-left: 4px solid #e69138;
 }
-.dropdown:hover .dropdown-content {
+
+.library-item span {
   display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-#ui button {
-  margin: 5px;
+
+.library-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.library-actions button {
+  padding: 4px 8px;
+  font-size: 12px;
+  margin: 0;
+  flex: 1;
+}
+
+.btn-delete { background: #cc0000 !important; }
+
+/* Мобильная оптимизация */
+@media (max-width: 600px) {
+  body { margin: 10px; }
+  
+  .menu-bar { 
+    justify-content: space-between; 
+    gap: 5px;
+  }
+  
+  .menu-bar button {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  textarea {
+    height: 250px;
+    font-size: 14px;
+  }
+
+  .action-panel button {
+    flex: 1 1 100%; /* Кнопки на мобильных во всю ширину */
+    padding: 12px;
+  }
+
+  #library-list {
+    grid-template-columns: 1fr;
+  }
 }
