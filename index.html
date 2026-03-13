@@ -2,6 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
   <title>AKANCODE Онлайн</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -13,26 +14,36 @@
     <div class="dropdown">
       <button>Файл</button>
       <div class="dropdown-content">
-        <button onclick="saveFile()">Сохранить</button>
-        <button onclick="loadFile()">Загрузить</button>
+        <button onclick="saveFile()">Сохранить на диск</button>
+        <button onclick="loadFile()">Загрузить с диска</button>
         <input type="file" id="fileInput" style="display:none" onchange="handleFile(this.files)" />
       </div>
     </div>
     <button onclick="clearCode()">Очистить код</button>
     <button onclick="clearOutput()">Очистить вывод</button>
-    <button onclick="showHelp()">Список команд</button>
-    <button onclick="resetInterpreter()">Сбросить интерпретатор</button>
+    <button onclick="showHelp()">Помощь</button>
+    <button onclick="resetInterpreter()">Сброс</button>
   </div>
 
   <textarea id="code" spellcheck="false" placeholder="Введите ваш код AKANCODE здесь..."></textarea>
-  <br>
-  <button onclick="runCode()">Запустить</button>
-  <button onclick="openAsSite()">Открыть как сайт</button>
+  
+  <div class="action-panel">
+    <button onclick="runCode()" class="btn-main">▶ Запустить</button>
+    <button onclick="openAsSite()" class="btn-site">🌐 Как сайт</button>
+    <button onclick="saveToLibrary()" class="btn-save">💾 Сохранить в браузере</button>
+  </div>
+
+  <div id="library-section">
+    <h3>📚 Мои сохранения</h3>
+    <div id="library-list"></div>
+  </div>
+
   <h5>V0.2.0 BETA</h5>
 
   <div id="output"></div>
-  <div id="ui" style="margin-top: 20px;"></div>
+  <div id="ui"></div>
 
   <script src="script.js"></script>
+  <script src="library.js"></script>
 </body>
 </html>
